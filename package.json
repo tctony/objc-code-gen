@@ -1,0 +1,10 @@
+{
+  "name": "objc-code-gen",
+  "version": "0.0.1",
+  "description": "a flexsible and configurable tool for objective c code generation",
+  "main": "bin/objc-code-gen",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "MIT"
+}
