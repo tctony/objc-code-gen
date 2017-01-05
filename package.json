@@ -4,7 +4,17 @@
   "description": "a flexsible and configurable tool for objective c code generation",
   "main": "bin/objc-code-gen",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node_modules/.bin/gulp run",
+    "test": "node_modules/.bin/gulp test"
   },
-  "license": "MIT"
+  "repository": "tctony/objc-code-gen",
+  "license": "MIT",
+  "devDependencies": {
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-typescript": "^3.1.3",
+    "merge2": "^1.0.3",
+    "typescript": "^2.1.4"
+  },
+  "dependencies": {}
 }
