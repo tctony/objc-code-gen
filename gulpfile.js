@@ -1,16 +1,18 @@
-var gulp = require('gulp'),
-  gulp_ts = require('gulp-typescript'),
-  typescript = require('typescript'),
-  merge = require('merge2'),
-  del = require('del'),
-  spawn = require('child_process').spawn;
+'use strict';
+const gulp = require('gulp');
+const gulp_debug = require('gulp-debug');
+const gulp_ts = require('gulp-typescript');
+const typescript = require('typescript');
+const merge = require('merge2');
+const del = require('del');
+const spawn = require('child_process').spawn;
 
-var cfg = {
+const cfg = {
   project: gulp_ts.createProject('./tsconfig.json'),
   bin: "./bin/objc-code-gen",
+  src: ["./src/**/*.ts"],
   base: "./src/",
   dest: "./bin/dist/",
-  src: ["./src/**/*.ts"],
   out: ["./bin/dist/**/*"]
 };
 
@@ -21,8 +23,8 @@ gulp.task('default', ['run']);
 gulp.task('test', ['build'], test(cfg));
 gulp.task('watch', watch(src(cfg), ['test']));
 
-function src(..._) {
-  return Array.from(arguments).reduce(function(srcs, cfg) {
+function src(...configs) {
+  return configs.reduce((srcs, cfg) => {
     return srcs.concat(cfg.src);
   }, []);
 }
@@ -35,9 +37,13 @@ function clean(cfg) {
 
 function build(cfg) {
   return function() {
-    var tee = gulp
-        .src(cfg.src, { base: cfg.base })
-        .pipe(cfg.project());
+    const tee = gulp.src(cfg.src, {
+        base: cfg.base
+      })
+      .pipe(gulp_debug({title: "tsc:"
+      }))
+      .pipe(cfg.project());
+
     return merge([
       tee.js.pipe(gulp.dest(cfg.dest)),
       tee.dts.pipe(gulp.dest(cfg.dest))
@@ -47,9 +53,11 @@ function build(cfg) {
 
 function run(cfg) {
   return function(done) {
-    var args = [ cfg.bin ];
+    const args = [cfg.bin];
     console.log(`Running ${args} ...`);
-    spawn(process.argv[0], args, { stdio: "inherit" }).on("exit", function(code) {
+    spawn(process.argv[0], args, {
+      stdio: "inherit"
+    }).on("exit", function(code) {
       done(code !== 0 ? `${code}` : undefined);
     });
   };
