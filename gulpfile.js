@@ -7,77 +7,78 @@ const typescript = require('typescript');
 const merge = require('merge2');
 const del = require('del');
 const spawn = require('child_process').spawn;
+const Jasmine = require('jasmine');
 
 const cfg = {
   project: gulp_ts.createProject('./tsconfig.json', {
     typescript: typescript
   }),
   bin: "./bin/objc-code-gen",
-  src: ["./src/**/*.ts"],
   base: "./src/",
+  src: ["./src/**/*.ts", "!./src/**/__test__/*.ts"],
+  testsrc: ["./src/**/__test__/*.ts"],
   dest: "./bin/dist/",
   out: ["./bin/dist/**/*"]
 };
 
-gulp.task('clean', clean(cfg));
-gulp.task('build', build(cfg));
-gulp.task('run', ['build'], run(cfg));
+gulp.task('clean', () => {
+  return del(cfg.out)
+});
+
+function compile(srcs) {
+  return gulp
+    .src(srcs, {
+      base: cfg.base
+    })
+    .pipe(gulp_changed(cfg.dest, {
+      extension: ".js"
+    }))
+    .pipe(gulp_debug({
+      title: "tsc:"
+    }))
+    .pipe(cfg.project());
+}
+
+gulp.task('build', () => {
+  const ts = compile(cfg.src);
+  return merge([
+    ts.js.pipe(gulp.dest(cfg.dest)),
+    ts.dts.pipe(gulp.dest(cfg.dest))
+  ]);
+});
+
+gulp.task('buildTest', ['build'], () => {
+  const ts = compile(cfg.testsrc);
+  return ts.js.pipe(gulp.dest(cfg.dest));
+});
+
+gulp.task('watch', () => {
+  return gulp.watch([cfg.src, cfg.testsrc], ['build', 'buildTest'])
+});
+
+gulp.task('run', ['build'], (done) => {
+  const args = [cfg.bin];
+  console.log(`Running ${args} ...`);
+  spawn(process.argv[0], args, {
+    stdio: "inherit"
+  }).on("exit", function (code) {
+    done(code !== 0 ? `${code}` : undefined);
+  });
+});
 gulp.task('default', ['run']);
-gulp.task('test', ['build'], test(cfg));
-gulp.task('watch', watch(src(cfg), ['test']));
 
-function src(...configs) {
-  return configs.reduce((srcs, cfg) => {
-    return srcs.concat(cfg.src);
-  }, []);
-}
-
-function clean(cfg) {
-  return function () {
-    return del(cfg.out);
+gulp.task('test', ['buildTest'], (done) => {
+  const jasmine = new Jasmine();
+  const config = {
+    spec_dir: "./bin/dist/",
+    spec_files: ['**/__test__/*.js'],
+    helpers: ['']
   };
-}
-
-function build(cfg) {
-  return function () {
-    const tee = gulp.src(cfg.src, {
-        base: cfg.base
-      })
-      .pipe(gulp_changed(cfg.dest, {
-        extension: ".js"
-      }))
-      .pipe(gulp_debug({
-        title: "tsc:"
-      }))
-      .pipe(cfg.project());
-
-    return merge([
-      tee.js.pipe(gulp.dest(cfg.dest)),
-      tee.dts.pipe(gulp.dest(cfg.dest))
-    ]);
-  };
-}
-
-function run(cfg) {
-  return function (done) {
-    const args = [cfg.bin];
-    console.log(`Running ${args} ...`);
-    spawn(process.argv[0], args, {
-      stdio: "inherit"
-    }).on("exit", function (code) {
-      done(code !== 0 ? `${code}` : undefined);
-    });
-  };
-}
-
-function test(cfg) {
-  return function () {
-    console.log('test nothing now');
-  };
-}
-
-function watch(src, tasks) {
-  return function () {
-    return gulp.watch(src, tasks);
-  };
-}
+  jasmine.loadConfig(config);
+  jasmine.addReporter({
+    jasmineDone: function() {
+      done(0);
+    }
+  });
+  jasmine.execute();
+});
