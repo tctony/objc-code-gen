@@ -3,6 +3,8 @@ const gulp = require('gulp');
 const gulp_changed = require('gulp-changed');
 const gulp_debug = require('gulp-debug');
 const gulp_ts = require('gulp-typescript');
+const gulp_watch = require('gulp-watch');
+const gulp_batch = require('gulp-batch');
 const typescript = require('typescript');
 const merge = require('merge2');
 const del = require('del');
@@ -53,7 +55,12 @@ gulp.task('buildTest', ['build'], () => {
 });
 
 gulp.task('watch', () => {
-  return gulp.watch([cfg.src, cfg.testsrc], ['build', 'buildTest'])
+  gulp_watch(cfg.src.concat(cfg.testsrc), gulp_batch((events, done) => {
+    // TODO handle file delete event
+    gulp.start(['build', 'buildTest'], done);
+  }));
+  // TODO why this will block the second and after changes
+  //return { then: () => { } };
 });
 
 gulp.task('run', ['build'], (done) => {
@@ -76,7 +83,7 @@ gulp.task('test', ['buildTest'], (done) => {
   };
   jasmine.loadConfig(config);
   jasmine.addReporter({
-    jasmineDone: function() {
+    jasmineDone: function () {
       done(0);
     }
   });
