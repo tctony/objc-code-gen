@@ -46,8 +46,8 @@ function compile(srcs) {
 gulp.task('build', () => {
   const ts = compile(cfg.src);
   return merge([
-    ts.js.pipe(gulp.dest(cfg.dest)),
-    ts.dts.pipe(gulp.dest(cfg.dest))
+    ts.js.pipe(gulp.dest(cfg.dest))//,
+    //ts.dts.pipe(gulp.dest(cfg.dest))
   ]);
 });
 
