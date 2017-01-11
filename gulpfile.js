@@ -1,5 +1,7 @@
 'use strict';
 const gulp = require('gulp');
+const gulp_util = require('gulp-util');
+const gulp_seq = require('gulp-sequence');
 const gulp_changed = require('gulp-changed');
 const gulp_debug = require('gulp-debug');
 const gulp_ts = require('gulp-typescript');
@@ -15,7 +17,7 @@ const cfg = {
   project: gulp_ts.createProject('./tsconfig.json', {
     typescript: typescript
   }),
-  bin: "./bin/objc-code-gen",
+  bin: "./bin/objc-code-gen.js",
   base: "./src/",
   src: ["./src/**/*.ts", "!./src/**/__test__/*.ts"],
   testsrc: ["./src/**/__test__/*.ts"],
@@ -24,7 +26,7 @@ const cfg = {
 };
 
 gulp.task('clean', () => {
-  return del(cfg.out)
+  return del(cfg.out);
 });
 
 function compile(srcs) {
@@ -49,30 +51,42 @@ gulp.task('build', () => {
   ]);
 });
 
+gulp.task('cleanBuild', gulp_seq('clean', 'build'));
+
 gulp.task('buildTest', ['build'], () => {
   const ts = compile(cfg.testsrc);
   return ts.js.pipe(gulp.dest(cfg.dest));
 });
 
+gulp.task('cleanBuildTest', gulp_seq('clean', 'buildTest'));
+
 gulp.task('watch', () => {
   gulp_watch(cfg.src.concat(cfg.testsrc), gulp_batch((events, done) => {
     // TODO handle file delete event
-    gulp.start(['build', 'buildTest'], done);
+    gulp_seq(['build', 'buildTest'])(() => {
+      done();
+    });
   }));
-  // TODO why this will block the second and after changes
-  //return { then: () => { } };
+  return { then: () => { } };
 });
 
-gulp.task('run', ['build'], (done) => {
-  const args = [cfg.bin];
-  console.log(`Running ${args} ...`);
-  spawn(process.argv[0], args, {
+function runShell(prog, args, done) {
+  gulp_util.log(`Running:'${prog} ${args.join(' ')}'`);
+  spawn(prog, args, {
     stdio: "inherit"
   }).on("exit", function (code) {
     done(code !== 0 ? `${code}` : undefined);
   });
+}
+
+gulp.task('run', ['build'], (done) => {
+  // TODO pass more args
+  const args = [cfg.bin];
+  runShell(process.argv[0], args, done);
 });
-gulp.task('default', ['run']);
+gulp.task('default', (done) => {
+  runShell('./node_modules/.bin/gulp', ['--tasks-simple'], done);
+});
 
 gulp.task('test', ['buildTest'], (done) => {
   const jasmine = new Jasmine();

@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 
-var index = require('./dist/index.js');
-index.hello('tony');
+var gen = require('./dist/index.js');
+gen.process('./tmp/input', './tmp/output');
