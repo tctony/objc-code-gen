@@ -1,5 +1,5 @@
-bin/dist
-src/.typings
+dist
+typings
 tmp
 
 # Created by https://www.gitignore.io/api/node,macos,emacs

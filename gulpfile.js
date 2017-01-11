@@ -21,8 +21,8 @@ const cfg = {
   base: "./src/",
   src: ["./src/**/*.ts", "!./src/**/__test__/*.ts"],
   testsrc: ["./src/**/__test__/*.ts"],
-  dest: "./bin/dist/",
-  out: ["./bin/dist/**/*"]
+  dest: "./dist/",
+  out: ["./dist/**/*"]
 };
 
 gulp.task('clean', () => {
@@ -61,12 +61,18 @@ gulp.task('buildTest', ['build'], () => {
 gulp.task('cleanBuildTest', gulp_seq('clean', 'buildTest'));
 
 gulp.task('watch', () => {
-  gulp_watch(cfg.src.concat(cfg.testsrc), gulp_batch((events, done) => {
-    // TODO handle file delete event
-    gulp_seq(['build', 'buildTest'])(() => {
-      done();
+  gulp_seq('clean', 'build', 'buildTest')(() => {
+    const batchHandler = gulp_batch((events, done) => {
+      gulp_util.log(gulp_util.colors.red('something changed:'));
+      // TODO handle file delete event
+      gulp_seq('build', 'buildTest')(() => {
+        done();
+      });
     });
-  }));
+    gulp_watch(cfg.src.concat(cfg.testsrc), batchHandler);
+    gulp_util.log('watching...');
+  });
+
   return { then: () => { } };
 });
 
@@ -91,7 +97,7 @@ gulp.task('default', (done) => {
 gulp.task('test', ['buildTest'], (done) => {
   const jasmine = new Jasmine();
   const config = {
-    spec_dir: "./bin/dist/",
+    spec_dir: cfg.dest,
     spec_files: ['**/__test__/*.js'],
     helpers: ['']
   };

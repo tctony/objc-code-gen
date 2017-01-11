@@ -3,6 +3,14 @@
     "target": "ES6",
     "module": "commonjs",
     "noImplicitAny": true,
-    "declaration": true
-  }
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*",
+    "typings/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -1,1 +1,1 @@
-export import Maybe = require('./maybe')
+export import Maybe = require('./maybe');

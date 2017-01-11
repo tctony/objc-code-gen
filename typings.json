@@ -1,7 +1,7 @@
 {
   "name": "objc-code-gen",
   "resolution": {
-    "main": "src/.typings"
+    "main": "typings"
   },
   "globalDependencies": {
     "jasmine": "registry:dt/jasmine#2.5.0+20161228223817",

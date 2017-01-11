@@ -1,4 +1,5 @@
-/// <reference path=".typings/index.d.ts" />
+/// <reference path="../typings/index.d.ts" />
+
 
 import * as vfs from 'vinyl-fs';
 
