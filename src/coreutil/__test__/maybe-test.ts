@@ -1,6 +1,6 @@
 /// <reference path="../../../typings/index.d.ts" />
 
-import Maybe = require('../maybe');
+import * as Maybe from '../maybe';
 
 describe('Maybe', function () {
 

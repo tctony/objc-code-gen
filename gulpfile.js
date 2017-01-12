@@ -46,8 +46,8 @@ function compile(srcs) {
 gulp.task('build', () => {
   const ts = compile(cfg.src);
   return merge([
-    ts.js.pipe(gulp.dest(cfg.dest))//,
-    //ts.dts.pipe(gulp.dest(cfg.dest))
+    ts.js.pipe(gulp.dest(cfg.dest)),
+    ts.dts.pipe(gulp.dest(cfg.dest))
   ]);
 });
 
@@ -61,11 +61,11 @@ gulp.task('buildTest', ['build'], () => {
 gulp.task('cleanBuildTest', gulp_seq('clean', 'buildTest'));
 
 gulp.task('watch', () => {
-  gulp_seq('clean', 'build', 'buildTest')(() => {
+  gulp_seq('clean', ['build', 'buildTest'])(() => {
     const batchHandler = gulp_batch((events, done) => {
       gulp_util.log(gulp_util.colors.red('something changed:'));
       // TODO handle file delete event
-      gulp_seq('build', 'buildTest')(() => {
+      gulp_seq(['build', 'buildTest'])(() => {
         done();
       });
     });
