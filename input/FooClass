@@ -1,2 +1,2 @@
 FooClass
-AnotherFooClass
+SubFooClass : FooClass

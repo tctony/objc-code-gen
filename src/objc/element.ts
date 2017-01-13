@@ -4,10 +4,25 @@ export interface IElement {
   render: () => string;
 }
 
-export class CommentElement implements IElement {
+export abstract class Element implements IElement {
+  public elementName: string;
+
+  public constructor(name: string) {
+    this.elementName = name;
+  }
+
+  public description(): string {
+    return `${this.elementName}`;
+  }
+
+  public abstract render(): string;
+}
+
+export class CommentElement extends Element {
   private content: string;
 
   public constructor(content: string) {
+    super('Comment');
     this.content = content;
   }
 
@@ -21,12 +36,13 @@ export enum ImportType {
   Std, // render to <>
 }
 
-export class ImportElement implements IElement {
+export class ImportElement extends Element {
   private fileName: string;
   private libName: Maybe.Maybe<string>;
   private type: ImportType;
 
   public constructor(fileName: string, libName?: string, type = ImportType.User) {
+    super('Import');
     this.fileName = fileName;
     this.libName = (libName === undefined ? Maybe.Nothing<string>() : Maybe.Just(libName));
     this.type = type;
@@ -97,15 +113,39 @@ export enum ForwardDeclarationType {
 //   reference: string;
 // }
 
-export class ClassElement implements IElement {
-  private name: string;
+export class ClassDeclarationElement extends Element {
+  private className: string;
+  private superClassName: string;
 
-  public constructor(name: string) {
-    this.name = name;
+  public constructor(className: string, superClassName = 'NSObject') {
+    super('ClassDeclaration');
+    this.className = className;
+    this.superClassName = superClassName;
+  }
+
+  public description(): string {
+    return super.description() + ' ' + this.className + '@' + this.superClassName;
   }
 
   public render(): string {
-    return `\n@interface ${this.name} : NSObject\n\n@end`;
+    return `\n@interface ${this.className} : ${this.superClassName}\n\n@end`;
+  }
+}
+
+export class ClassImplementationElement extends Element {
+  private className: string;
+
+  public constructor(className: string) {
+    super('Class');
+    this.className = className;
+  }
+
+  public description(): string {
+    return super.description() + ' ' + this.className;
+  }
+
+  public render(): string {
+    return `\n@implementation ${this.className}\n\n@end`;
   }
 }
 
