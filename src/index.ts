@@ -1,12 +1,15 @@
 /// <reference path="../typings/index.d.ts" />
 
 import * as vfs from 'vinyl-fs';
-import { SimpleParser } from './parser';
+import * as merge from 'merge2';
+import { SimpleParser, DummyParser } from './parser';
 import { Generator } from './objc';
 
 export function process(inputDir: string, outputDir: string): void {
-  vfs.src(inputDir + '/*')
-    .pipe(SimpleParser())
-    .pipe(Generator())
+  const input = merge(
+    vfs.src(inputDir + '/*.simple').pipe(SimpleParser()),
+    vfs.src(inputDir + '/dummy').pipe(DummyParser())
+  );
+  input.pipe(Generator())
     .pipe(vfs.dest(outputDir));
 }

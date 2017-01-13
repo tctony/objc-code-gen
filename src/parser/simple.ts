@@ -8,7 +8,7 @@ import * as ObjC from '../objc';
  * SimpleParser create empty class for each name in input file.
  */
 export function SimpleParser() {
-  return Factory.createParser(function (file: vf, content: string) {
+  return Factory.createParser(function (file: vf, content?: string) {
     const out = <Factory.Out>this;
 
     if (content) {
