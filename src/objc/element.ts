@@ -4,31 +4,65 @@ export interface IElement {
   render: () => string;
 }
 
-export class ClassElement {
-  private name: string;
-  public constructor(name: string) {
-    this.name = name;
+export class CommentElement implements IElement {
+  private content: string;
+
+  public constructor(content: string) {
+    this.content = content;
   }
 
   public render(): string {
-    return `@interface ${this.name} : NSObject\n\n@end\n\n`;
+    return this.content;
   }
 }
 
-// export interface Comment {
-//   content: string;
-// }
+export enum ImportType {
+  User, // render to ""
+  Std, // render to <>
+}
 
-// export interface Import {
-//   file: string;
-//   isPublic: boolean;
-//   library: Maybe.Maybe<string>;
-// }
+export class ImportElement implements IElement {
+  private fileName: string;
+  private libName: Maybe.Maybe<string>;
+  private type: ImportType;
 
-// export enum ForwardDeclarationType {
-//   class,
-//   protocol
-// }
+  public constructor(fileName: string, libName?: string, type = ImportType.User) {
+    this.fileName = fileName;
+    this.libName = (libName === undefined ? Maybe.Nothing<string>() : Maybe.Just(libName));
+    this.type = type;
+  }
+
+  public render(): string {
+    let contents = this.fileName;
+    if (!contents.endsWith('.h') && !contents.endsWith('.hpp')) {
+      contents += '.h';
+    }
+
+    contents = Maybe.match((libName: string) => {
+      return contents = libName + '/' + contents;
+    }, () => {
+      return contents;
+    }, this.libName);
+
+    switch (this.type) {
+      case ImportType.User: {
+        contents = `"${contents}"`;
+        break;
+      }
+      case ImportType.Std: {
+        contents = `<${contents}>`;
+        break;
+      }
+    }
+
+    return `#import ${contents}`;
+  }
+}
+
+export enum ForwardDeclarationType {
+  class,
+  protocol
+}
 
 // export class ForwardDeclaration {
 //   private name: string;
@@ -62,3 +96,17 @@ export class ClassElement {
 //   name: string;
 //   reference: string;
 // }
+
+export class ClassElement implements IElement {
+
+  private name: string;
+
+  public constructor(name: string) {
+    this.name = name;
+  }
+
+  public render(): string {
+    return `@interface ${this.name} : NSObject\n\n@end`;
+  }
+}
+

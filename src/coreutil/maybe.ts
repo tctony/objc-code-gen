@@ -1,5 +1,5 @@
 export class Maybe<T> {
-  constructor(public value: T) {
+  constructor(public value: T | null) {
   }
 }
 
