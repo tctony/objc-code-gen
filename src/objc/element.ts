@@ -98,7 +98,6 @@ export enum ForwardDeclarationType {
 // }
 
 export class ClassElement implements IElement {
-
   private name: string;
 
   public constructor(name: string) {
@@ -106,7 +105,7 @@ export class ClassElement implements IElement {
   }
 
   public render(): string {
-    return `@interface ${this.name} : NSObject\n\n@end`;
+    return `\n@interface ${this.name} : NSObject\n\n@end`;
   }
 }
 

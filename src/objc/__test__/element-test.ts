@@ -46,7 +46,7 @@ block comment */`;
     const className = 'className';
 
     it('simple class', () => {
-      renderExpect(new E.ClassElement(className)).toEqual(`@interface ${className} : NSObject\n\n@end`);
+      renderExpect(new E.ClassElement(className)).toEqual(`\n@interface ${className} : NSObject\n\n@end`);
     })
   })
 });
