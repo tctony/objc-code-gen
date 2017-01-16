@@ -28,17 +28,17 @@ export function SimpleParser() {
       if (classDefines.length > 0) {
         const hfile = ObjC.File.h(file);
         const mfile = ObjC.File.m(file);
-        hfile.elements.push(new ObjC.ImportElement('Foundation', 'Foundation', ObjC.ImportType.Std));
-        mfile.elements.push(new ObjC.ImportElement(file.stem));
+        hfile.addElement(new ObjC.ImportElement('Foundation', 'Foundation', ObjC.ImportType.Std));
+        mfile.addElement(new ObjC.ImportElement(file.stem));
 
         classDefines.map((define) => {
           if (typeof define === 'string') {
-            hfile.elements.push(new ObjC.ClassDeclarationElement(define));
-            mfile.elements.push(new ObjC.ClassImplementationElement(define));
+            hfile.addElement(new ObjC.ClassDeclarationElement(define));
+            mfile.addElement(new ObjC.ClassImplementationElement(define));
           }
           else if (define instanceof Array) {
-            hfile.elements.push(new ObjC.ClassDeclarationElement(define[0], define[1]));
-            mfile.elements.push(new ObjC.ClassImplementationElement(define[0]));
+            hfile.addElement(new ObjC.ClassDeclarationElement(define[0], define[1]));
+            mfile.addElement(new ObjC.ClassImplementationElement(define[0]));
           } else {
             throw new Error(`invalid define: ${define}`);
           }

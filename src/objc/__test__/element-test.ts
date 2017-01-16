@@ -2,11 +2,48 @@
 
 import * as E from '../element';
 
-describe('Element.render', () => {
+describe('Element', () => {
 
   function renderExpect(element: E.IElement) {
     return expect(element.render());
   }
+
+  describe('ArrayContainer', () => {
+    const arrayContainer = new E.ElementArrayContainer('ArrayContainer');
+    it('array container is emtpy by default', () => {
+      renderExpect(arrayContainer)
+        .toEqual('');
+    });
+
+    it('array container add elment', () => {
+      arrayContainer.addElement(new E.CommentElement('1'));
+      renderExpect(arrayContainer)
+        .toEqual('1');
+    });
+
+    it('array container add element on front', () => {
+      arrayContainer.addElement(new E.CommentElement('0'), true);
+      renderExpect(arrayContainer)
+        .toEqual('0\n1');
+    });
+
+    it('array container render separator', () => {
+      class TestArrayContainer extends E.ElementArrayContainer {
+        public render(): string {
+          return this.renderElements(' ');
+        }
+      }
+
+      const container = new TestArrayContainer('TestArrayContainer');
+      container.addElement(new E.CommentElement('1'));
+      container.addElement(new E.CommentElement('2'));
+      container.addElement(new E.CommentElement('3'));
+      renderExpect(container)
+        .toEqual('1 2 3');
+    })
+
+
+  })
 
   describe('Comment:', () => {
     it('comment render just returns the input', () => {
@@ -53,6 +90,7 @@ block comment */`;
   describe('ClassDeclaration:', () => {
     const className = 'className';
     const superClassName = 'superClassName';
+    const categoryName = 'categoryName';
 
     it('simple class declaration', () => {
       renderExpect(new E.ClassDeclarationElement(className))
@@ -61,14 +99,31 @@ block comment */`;
       renderExpect(new E.ClassDeclarationElement(className, superClassName))
         .toEqual(`\n@interface ${className} : ${superClassName}\n\n@end`);
     });
+
+    it('category declaration', () => {
+      renderExpect(new E.ClassDeclarationElement(className, undefined, categoryName))
+        .toEqual(`\n@interface ${className} (${categoryName})\n\n@end`);
+    })
   });
 
-  describe('ClassImplementation:', () => {
+  fdescribe('ClassImplementation:', () => {
     const className = 'className';
+    const categoryName = 'categoryName';
 
     it('simple class implementation', () => {
       renderExpect(new E.ClassImplementationElement(className))
         .toEqual(`\n@implementation ${className}\n\n@end`);
     });
+
+    it('category class implementation', () => {
+      renderExpect(new E.ClassImplementationElement(className, categoryName))
+        .toEqual(`\n@implementation ${className} (${categoryName})\n\n@end`);
+    })
+
+    it('category class implementation throw on empty category name', () => {
+      expect(() => {
+        new E.ClassImplementationElement(className, '');
+      }).toThrow();
+    })
   });
 });

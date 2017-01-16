@@ -4,6 +4,10 @@ export interface IElement {
   render: () => string;
 }
 
+export interface IElementContainer {
+  addElement: (element: IElement) => void;
+}
+
 export abstract class Element implements IElement {
   public elementName: string;
 
@@ -16,6 +20,34 @@ export abstract class Element implements IElement {
   }
 
   public abstract render(): string;
+}
+
+export class ElementArrayContainer
+  extends Element implements IElementContainer {
+  protected elements: IElement[];
+
+  public constructor(name: string, elements: IElement[] = []) {
+    super(name);
+    this.elements = elements;
+  }
+
+  public addElement(element: IElement, onFront = false): void {
+    if (onFront == false) {
+      this.elements.push(element);
+    } else {
+      this.elements.unshift(element);
+    }
+  }
+
+  protected renderElements(separator = '\n'): string {
+    return this.elements.map((elem: IElement) => {
+      return elem.render();
+    }).join(separator);
+  }
+
+  public render(): string {
+    return this.renderElements();
+  }
 }
 
 export class CommentElement extends Element {
@@ -116,11 +148,13 @@ export enum ForwardDeclarationType {
 export class ClassDeclarationElement extends Element {
   private className: string;
   private superClassName: string;
+  private categoryName: Maybe.Maybe<string>;
 
-  public constructor(className: string, superClassName = 'NSObject') {
+  public constructor(className: string, superClassName = 'NSObject', categoryName?: string) {
     super('ClassDeclaration');
     this.className = className;
     this.superClassName = superClassName;
+    this.categoryName = (categoryName === undefined ? Maybe.Nothing<string>() : Maybe.Just(categoryName));
   }
 
   public description(): string {
@@ -128,16 +162,32 @@ export class ClassDeclarationElement extends Element {
   }
 
   public render(): string {
-    return `\n@interface ${this.className} : ${this.superClassName}\n\n@end`;
+    return Maybe.match((cateName: string) => {
+      return `\n@interface ${this.className} (${cateName})\n\n@end`;
+    }, () => {
+      return `\n@interface ${this.className} : ${this.superClassName}\n\n@end`;
+    }, this.categoryName);
   }
 }
 
 export class ClassImplementationElement extends Element {
   private className: string;
+  private categoryName: Maybe.Maybe<string>;
 
-  public constructor(className: string) {
+  public constructor(className: string, cateName?: string) {
     super('Class');
     this.className = className;
+    if (cateName !== undefined) {
+      if (cateName.length > 0) {
+        this.categoryName = Maybe.Just(cateName);
+      }
+      else {
+        throw new Error('Creating category implementation with empty category name is probably by mistaken');
+      }
+    }
+    else {
+      this.categoryName = Maybe.Nothing<string>();
+    }
   }
 
   public description(): string {
@@ -145,7 +195,11 @@ export class ClassImplementationElement extends Element {
   }
 
   public render(): string {
-    return `\n@implementation ${this.className}\n\n@end`;
+    return Maybe.match((cateName: string) => {
+      return `\n@implementation ${this.className} (${cateName})\n\n@end`;
+    }, () => {
+      return `\n@implementation ${this.className}\n\n@end`;
+    }, this.categoryName);
   }
 }
 

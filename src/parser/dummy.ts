@@ -9,8 +9,22 @@ import * as ObjC from '../objc';
  */
 export function DummyParser() {
   return Factory.createParser(function (file: vf) {
-    const objcFile = new ObjC.File(file);
-    // TODO add elements here
-    (<Factory.Out>this).push(objcFile);
+    const name = file.stem;
+    const hfile = ObjC.File.h(file);
+    const mfile = ObjC.File.m(file);
+
+    hfile.addElement(new ObjC.ClassDeclarationElement(name));
+    hfile.addElement(new ObjC.ClassDeclarationElement(name, undefined, 'cate'));
+    hfile.addElement(new ObjC.ClassDeclarationElement('Sub' + name, name));
+
+    mfile.addElement(new ObjC.ImportElement(name));
+    mfile.addElement(new ObjC.ClassImplementationElement(name));
+    mfile.addElement(new ObjC.ClassImplementationElement(name, 'cate'));
+    mfile.addElement(new ObjC.ClassImplementationElement('Sub' + name));
+
+    const out = <Factory.Out>this;
+    out.push(hfile);
+    out.push(mfile);
   });
+
 }

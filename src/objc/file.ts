@@ -1,22 +1,14 @@
 /// <reference path="./../../typings/index.d.ts" />
 
 import * as vf from 'vinyl';
-import { IElement, Element } from './element';
+import { IElement, ElementArrayContainer } from './element';
 
-export class File extends Element {
+export class File extends ElementArrayContainer {
   public vinyl: vf;
-  public elements: IElement[];
 
   public constructor(vinyl: vf, elements: IElement[] = []) {
-    super('File');
+    super('File', elements);
     this.vinyl = vinyl.clone({ contents: false });
-    this.elements = elements;
-  }
-
-  public render(): string {
-    return this.elements.map((elem: IElement) => {
-      return elem.render();
-    }).join('\n');
   }
 
   public static h(vinyl: vf, elements: IElement[] = []) {

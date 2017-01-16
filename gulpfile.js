@@ -22,7 +22,7 @@ const cfg = {
   src: ["./src/**/*.ts", "!./src/**/__test__/*.ts"],
   testsrc: ["./src/**/__test__/*.ts"],
   dest: "./dist/",
-  out: ["./dist/**/*"]
+  out: ["./dist/**/*", "./tmp/**/*"]
 };
 
 gulp.task('clean', () => {

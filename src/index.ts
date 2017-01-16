@@ -7,8 +7,8 @@ import { Generator } from './objc';
 
 export function process(inputDir: string, outputDir: string): void {
   const input = merge(
-    vfs.src(inputDir + '/*.simple').pipe(SimpleParser()),
-    vfs.src(inputDir + '/dummy').pipe(DummyParser())
+    vfs.src(inputDir + '/Dummy.in').pipe(DummyParser()),
+    vfs.src(inputDir + '/*.simple').pipe(SimpleParser())
   );
   input.pipe(Generator())
     .pipe(vfs.dest(outputDir));
