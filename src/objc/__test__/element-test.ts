@@ -87,6 +87,24 @@ block comment */`;
     });
   });
 
+  describe('ForwardDeclaration:', () => {
+    it('forward declaration type', () => {
+      const name = 'name';
+      renderExpect(new E.ForwardDeclarationElement.ClassForwardDecl(name))
+        .toEqual(`\n@class ${name};`);
+      renderExpect(new E.ForwardDeclarationElement.ProtocolForwardDecl(name))
+        .toEqual(`\n@protocol ${name};`);
+    });
+
+    it('declaration names', () => {
+      const name = 'name';
+      renderExpect(new E.ForwardDeclarationElement.ClassForwardDecl())
+        .toEqual(`\n@class ;`)
+      renderExpect(new E.ForwardDeclarationElement.ClassForwardDecl(name + '0', name + '1'))
+        .toEqual(`\n@class name0, name1;`)
+    })
+  });
+
   describe('ClassDeclaration:', () => {
     const className = 'className';
     const superClassName = 'superClassName';

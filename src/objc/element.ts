@@ -112,38 +112,51 @@ export enum ForwardDeclarationType {
   protocol
 }
 
-// export class ForwardDeclaration {
-//   private name: string;
-//   private declarationType: ForwardDeclarationType;
+export class ForwardDeclarationElement extends Element {
+  private type: ForwardDeclarationType;
+  private names: string[];
 
-//   constructor(name: string, type: ForwardDeclarationType) {
-//     this.name = name;
-//     this.declarationType = type;
-//   }
+  protected constructor(type: ForwardDeclarationType, names: string[]) {
+    super('ForwardDeclaration');
+    this.type = type;
+    this.names = names;
+  }
 
-//   match<T>(classDeclaration: (name: string) => T, protocolDeclaration: (name: string) => T) {
-//     switch (this.declarationType) {
-//       case ForwardDeclarationType.class:
-//         return classDeclaration(this.name);
-//       case ForwardDeclarationType.protocol:
-//         return protocolDeclaration(this.name);
-//     }
-//   }
-// }
+  private match<T>(classFunc: () => T, protocolFunc: () => T): T {
+    switch (this.type) {
+      case ForwardDeclarationType.class:
+        return classFunc();
+      case ForwardDeclarationType.protocol:
+        return protocolFunc();
+      default:
+        throw TypeError(`invalid forward declaration type ${this.type}`);
+    }
+  }
 
-// export function ForwardClassDeclaration(name: string) {
-//   return new ForwardDeclaration(name, ForwardDeclarationType.class);
-// }
+  public description(): string {
+    const tag = this.match(() => { return 'C' }, () => { return 'P'; });
+    return `${super.description()} ${this.names.join(',')}(${tag})`;
+  }
 
-// export function ForwardProtocolDeclaration(name: string) {
-//   return new ForwardDeclaration(name, ForwardDeclarationType.protocol);
-// }
+  public render(): string {
+    const tag = this.match(() => { return 'class' }, () => { return 'protocol'; });
+    return `\n@${tag} ${this.names.join(', ')};`
+  }
+}
 
+export module ForwardDeclarationElement {
+  export class ClassForwardDecl extends ForwardDeclarationElement {
+    constructor(...names: string[]) {
+      super(ForwardDeclarationType.class, names);
+    }
+  }
 
-// export interface Type {
-//   name: string;
-//   reference: string;
-// }
+  export class ProtocolForwardDecl extends ForwardDeclarationElement {
+    constructor(...names: string[]) {
+      super(ForwardDeclarationType.protocol, names);
+    }
+  }
+}
 
 export class ClassDeclarationElement extends Element {
   private className: string;
