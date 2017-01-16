@@ -149,12 +149,18 @@ export class ClassDeclarationElement extends Element {
   private className: string;
   private superClassName: string;
   private categoryName: Maybe.Maybe<string>;
+  private implementedProtocols: string[];
 
   public constructor(className: string, superClassName = 'NSObject', categoryName?: string) {
     super('ClassDeclaration');
     this.className = className;
     this.superClassName = superClassName;
     this.categoryName = (categoryName === undefined ? Maybe.Nothing<string>() : Maybe.Just(categoryName));
+    this.implementedProtocols = [];
+  }
+
+  public implementProtocol(protocol: string): void {
+    this.implementedProtocols.push(protocol);
   }
 
   public description(): string {
@@ -162,10 +168,11 @@ export class ClassDeclarationElement extends Element {
   }
 
   public render(): string {
+    const protocolString = (this.implementedProtocols.length > 0 ? ` <${this.implementedProtocols.join(', ')}>` : '');
     return Maybe.match((cateName: string) => {
-      return `\n@interface ${this.className} (${cateName})\n\n@end`;
+      return `\n@interface ${this.className} (${cateName})${protocolString}\n\n@end`;
     }, () => {
-      return `\n@interface ${this.className} : ${this.superClassName}\n\n@end`;
+      return `\n@interface ${this.className} : ${this.superClassName}${protocolString}\n\n@end`;
     }, this.categoryName);
   }
 }
@@ -203,3 +210,21 @@ export class ClassImplementationElement extends Element {
   }
 }
 
+export class ProtocolElement extends Element {
+  private protocolName: string;
+  private baseProtocols: string[];
+
+  constructor(protoName: string, baseProtos = ['NSObject']) {
+    super('Protocol');
+    this.protocolName = protoName;
+    this.baseProtocols = baseProtos;
+  }
+
+  public description(): string {
+    return super.description() + ' ' + this.protocolName;
+  }
+
+  public render(): string {
+    return `\n@protocol ${this.protocolName} <${this.baseProtocols.join(', ')}>\n\n@end`
+  }
+}

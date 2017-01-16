@@ -91,6 +91,8 @@ block comment */`;
     const className = 'className';
     const superClassName = 'superClassName';
     const categoryName = 'categoryName';
+    const proto0 = 'proto0';
+    const proto1 = 'proto1';
 
     it('simple class declaration', () => {
       renderExpect(new E.ClassDeclarationElement(className))
@@ -103,10 +105,21 @@ block comment */`;
     it('category declaration', () => {
       renderExpect(new E.ClassDeclarationElement(className, undefined, categoryName))
         .toEqual(`\n@interface ${className} (${categoryName})\n\n@end`);
-    })
+    });
+
+    it('class implements category', () => {
+      const classDecl = new E.ClassDeclarationElement(className);
+      classDecl.implementProtocol(proto0);
+      renderExpect(classDecl)
+        .toEqual(`\n@interface ${className} : NSObject <${proto0}>\n\n@end`);
+
+      classDecl.implementProtocol(proto1);
+      renderExpect(classDecl)
+        .toEqual(`\n@interface ${className} : NSObject <${proto0}, ${proto1}>\n\n@end`);
+    });
   });
 
-  fdescribe('ClassImplementation:', () => {
+  describe('ClassImplementation:', () => {
     const className = 'className';
     const categoryName = 'categoryName';
 
@@ -126,4 +139,19 @@ block comment */`;
       }).toThrow();
     })
   });
+
+  describe('Protocol:', () => {
+    const protocolName = 'ProtocolName';
+    const baseProtocols = ['b1', 'b2'];
+
+    it('simple protocol', () => {
+      renderExpect(new E.ProtocolElement(protocolName))
+        .toEqual(`\n@protocol ${protocolName} <NSObject>\n\n@end`);
+    });
+
+    it('protocol inherit', () => {
+      renderExpect(new E.ProtocolElement(protocolName, baseProtocols))
+        .toEqual(`\n@protocol ${protocolName} <${baseProtocols.join(', ')}>\n\n@end`)
+    })
+  })
 });

@@ -9,18 +9,24 @@ import * as ObjC from '../objc';
  */
 export function DummyParser() {
   return Factory.createParser(function (file: vf) {
-    const name = file.stem;
+    const className = file.stem;
+    const protocolName = className + 'Delegate';
+    const categoryName = 'category';
+    const subClassName = 'Sub' + className;
     const hfile = ObjC.File.h(file);
     const mfile = ObjC.File.m(file);
 
-    hfile.addElement(new ObjC.ClassDeclarationElement(name));
-    hfile.addElement(new ObjC.ClassDeclarationElement(name, undefined, 'cate'));
-    hfile.addElement(new ObjC.ClassDeclarationElement('Sub' + name, name));
+    hfile.addElement(new ObjC.ProtocolElement(protocolName));
+    const classDecl = new ObjC.ClassDeclarationElement(className);
+    classDecl.implementProtocol(protocolName);
+    hfile.addElement(classDecl);
+    hfile.addElement(new ObjC.ClassDeclarationElement(className, undefined, categoryName));
+    hfile.addElement(new ObjC.ClassDeclarationElement(subClassName, className));
 
-    mfile.addElement(new ObjC.ImportElement(name));
-    mfile.addElement(new ObjC.ClassImplementationElement(name));
-    mfile.addElement(new ObjC.ClassImplementationElement(name, 'cate'));
-    mfile.addElement(new ObjC.ClassImplementationElement('Sub' + name));
+    mfile.addElement(new ObjC.ImportElement(className));
+    mfile.addElement(new ObjC.ClassImplementationElement(className));
+    mfile.addElement(new ObjC.ClassImplementationElement(className, categoryName));
+    mfile.addElement(new ObjC.ClassImplementationElement(subClassName));
 
     const out = <Factory.Out>this;
     out.push(hfile);
