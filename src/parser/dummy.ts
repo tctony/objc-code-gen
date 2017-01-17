@@ -10,6 +10,7 @@ import * as ObjC from '../objc';
 export function DummyParser() {
   return Factory.createParser(function (file: vf) {
     const className = file.stem;
+    const propertyName = 'property';
     const otherClassName = 'OtherClass';
     const protocolName = className + 'Delegate';
     const categoryName = 'category';
@@ -22,6 +23,7 @@ export function DummyParser() {
     hfile.addElement(new ObjC.ForwardDeclarationElement.ProtocolForwardDecl(protocolName));
     const classDecl = new ObjC.ClassDeclarationElement(className);
     classDecl.implementProtocol('NSObject');
+    classDecl.addProperty(new ObjC.PropertyElement(propertyName, new ObjC.TypeElement('int'), ObjC.PropertyMemoryKeyword.assign));
     hfile.addElement(classDecl);
     hfile.addElement(new ObjC.ClassDeclarationElement(className, undefined, categoryName));
     hfile.addElement(new ObjC.ClassDeclarationElement(subClassName, className));

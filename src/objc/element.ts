@@ -163,6 +163,7 @@ export class ClassDeclarationElement extends Element {
   private superClassName: string;
   private categoryName: Maybe.Maybe<string>;
   private implementedProtocols: string[];
+  private properties: ElementArrayContainer;
 
   public constructor(className: string, superClassName = 'NSObject', categoryName?: string) {
     super('ClassDeclaration');
@@ -170,10 +171,17 @@ export class ClassDeclarationElement extends Element {
     this.superClassName = superClassName;
     this.categoryName = (categoryName === undefined ? Maybe.Nothing<string>() : Maybe.Just(categoryName));
     this.implementedProtocols = [];
+    this.properties = new ElementArrayContainer('Properties');
   }
 
   public implementProtocol(protocol: string): void {
     this.implementedProtocols.push(protocol);
+  }
+
+  public addProperty(...properties: PropertyElement[]) {
+    properties.forEach((value) => {
+      this.properties.addElement(value);
+    });
   }
 
   public description(): string {
@@ -182,10 +190,12 @@ export class ClassDeclarationElement extends Element {
 
   public render(): string {
     const protocolString = (this.implementedProtocols.length > 0 ? ` <${this.implementedProtocols.join(', ')}>` : '');
+    let propertyString = this.properties.render();
+    if (propertyString.length > 0) propertyString += '\n';
     return Maybe.match((cateName: string) => {
-      return `\n@interface ${this.className} (${cateName})${protocolString}\n\n@end`;
+      return `\n@interface ${this.className} (${cateName})${protocolString}\n${propertyString}\n@end`;
     }, () => {
-      return `\n@interface ${this.className} : ${this.superClassName}${protocolString}\n\n@end`;
+      return `\n@interface ${this.className} : ${this.superClassName}${protocolString}\n${propertyString}\n@end`;
     }, this.categoryName);
   }
 }
@@ -239,5 +249,67 @@ export class ProtocolElement extends Element {
 
   public render(): string {
     return `\n@protocol ${this.protocolName} <${this.baseProtocols.join(', ')}>\n\n@end`
+  }
+}
+
+export class TypeElement {
+  private typeName: string;
+  private isReference: boolean;
+
+  public constructor(name: string, isRef = false) {
+    this.typeName = name;;
+    this.isReference = isRef;
+  }
+
+  public render(): string {
+    return this.typeName + (this.isReference ? ' *' : '');
+  }
+}
+
+enum PropertyAtomicKeyword {
+  atomic,
+  nonatomic
+}
+
+enum PropertyNullabilityKeyward {
+  nonnull,
+  nullable
+}
+
+export enum PropertyMemoryKeyword {
+  assign,
+  copy,
+  strong,
+  weak
+}
+
+enum PropertyReadabilityKeyword {
+  readonly,
+  readwrite
+}
+
+export class PropertyElement extends Element {
+  private propertyName: string;
+  private propertyType: TypeElement;
+  private memoryKeyword: PropertyMemoryKeyword;
+  private atomicKeyword: PropertyAtomicKeyword;
+
+  public constructor(name: string, type: TypeElement, memory: PropertyMemoryKeyword) {
+    super('Property');
+    this.propertyName = name;
+    this.propertyType = type;
+    this.memoryKeyword = memory;
+    this.atomicKeyword = PropertyAtomicKeyword.nonatomic;
+  }
+
+  public render(): string {
+    const keywords = (() => {
+      const array = [];
+      array.push(PropertyAtomicKeyword[this.atomicKeyword]);
+      array.push(PropertyMemoryKeyword[this.memoryKeyword]);
+      return array;
+    })();
+
+    return `\n@property (${keywords.join(', ')}) ${this.propertyType.render()} ${this.propertyName};`;
   }
 }

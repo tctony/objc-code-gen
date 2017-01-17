@@ -40,10 +40,8 @@ describe('Element', () => {
       container.addElement(new E.CommentElement('3'));
       renderExpect(container)
         .toEqual('1 2 3');
-    })
-
-
-  })
+    });
+  });
 
   describe('Comment:', () => {
     it('comment render just returns the input', () => {
@@ -79,7 +77,7 @@ block comment */`;
     it('lib import', () => {
       renderExpect(new E.ImportElement(fileName, libName))
         .toEqual(`#import "${libName + '/' + fileName}.h"`);
-    })
+    });
 
     it('stanard library import', () => {
       renderExpect(new E.ImportElement(fileName, undefined, E.ImportType.Std))
@@ -102,7 +100,7 @@ block comment */`;
         .toEqual(`\n@class ;`)
       renderExpect(new E.ForwardDeclarationElement.ClassForwardDecl(name + '0', name + '1'))
         .toEqual(`\n@class name0, name1;`)
-    })
+    });
   });
 
   describe('ClassDeclaration:', () => {
@@ -125,7 +123,7 @@ block comment */`;
         .toEqual(`\n@interface ${className} (${categoryName})\n\n@end`);
     });
 
-    it('class implements category', () => {
+    it('class implements protocol', () => {
       const classDecl = new E.ClassDeclarationElement(className);
       classDecl.implementProtocol(proto0);
       renderExpect(classDecl)
@@ -134,6 +132,17 @@ block comment */`;
       classDecl.implementProtocol(proto1);
       renderExpect(classDecl)
         .toEqual(`\n@interface ${className} : NSObject <${proto0}, ${proto1}>\n\n@end`);
+    });
+
+    it('class with properties', () => {
+      const classDecl = new E.ClassDeclarationElement(className);
+      const property = new E.PropertyElement('property0', new E.TypeElement('int'), E.PropertyMemoryKeyword.assign);
+      classDecl.addProperty(property);
+      renderExpect(classDecl)
+        .toEqual(`\n@interface ${className} : NSObject\n${property.render()}\n\n@end`);
+      classDecl.addProperty(property);
+      renderExpect(classDecl)
+        .toEqual(`\n@interface ${className} : NSObject\n${property.render() + '\n' + property.render()}\n\n@end`);
     });
   });
 
@@ -149,13 +158,13 @@ block comment */`;
     it('category class implementation', () => {
       renderExpect(new E.ClassImplementationElement(className, categoryName))
         .toEqual(`\n@implementation ${className} (${categoryName})\n\n@end`);
-    })
+    });
 
     it('category class implementation throw on empty category name', () => {
       expect(() => {
         new E.ClassImplementationElement(className, '');
       }).toThrow();
-    })
+    });
   });
 
   describe('Protocol:', () => {
@@ -170,6 +179,31 @@ block comment */`;
     it('protocol inherit', () => {
       renderExpect(new E.ProtocolElement(protocolName, baseProtocols))
         .toEqual(`\n@protocol ${protocolName} <${baseProtocols.join(', ')}>\n\n@end`)
-    })
-  })
+    });
+  });
+
+  describe('Type:', () => {
+    const typeName = 'TypeName';
+
+    it('value type', () => {
+      renderExpect(new E.TypeElement(typeName))
+        .toEqual(typeName);
+    });
+
+    it('reference type', () => {
+      renderExpect(new E.TypeElement(typeName, true))
+        .toEqual(typeName + ' *');
+    });
+  });
+
+  describe('Property:', () => {
+    const propertyName = 'propertyName';
+    const propertyType = new E.TypeElement('NSObject', true);
+    const memoryKeyword = E.PropertyMemoryKeyword.strong;
+
+    it('any property', () => {
+      renderExpect(new E.PropertyElement(propertyName, propertyType, memoryKeyword))
+        .toEqual(`\n@property (nonatomic, ${E.PropertyMemoryKeyword[memoryKeyword]}) ${propertyType.render()} ${propertyName};`);
+    });
+  });
 });
