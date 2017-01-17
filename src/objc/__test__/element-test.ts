@@ -136,7 +136,7 @@ block comment */`;
 
     it('class with properties', () => {
       const classDecl = new E.ClassDeclarationElement(className);
-      const property = new E.PropertyElement('property0', new E.TypeElement('int'), E.PropertyMemoryKeyword.assign);
+      const property = new E.PropertyElement('property0', E.Type.ValueType('int'), E.PropertyModifierMemory.assign);
       classDecl.addProperty(property);
       renderExpect(classDecl)
         .toEqual(`\n@interface ${className} : NSObject\n${property.render()}\n\n@end`);
@@ -184,26 +184,43 @@ block comment */`;
 
   describe('Type:', () => {
     const typeName = 'TypeName';
+    const protocolName = 'ProtocolName';
 
     it('value type', () => {
-      renderExpect(new E.TypeElement(typeName))
+      renderExpect(E.Type.ValueType(typeName))
         .toEqual(typeName);
     });
 
-    it('reference type', () => {
-      renderExpect(new E.TypeElement(typeName, true))
+    it('pointer type', () => {
+      renderExpect(E.Type.PointerType(typeName))
         .toEqual(typeName + ' *');
+    });
+
+    it('protocol type', () => {
+      renderExpect(E.Type.ProtocolType(protocolName))
+        .toEqual(`id<${protocolName}>`);
+    });
+
+    it('complex type', () => {
+      renderExpect(new E.Type(typeName, false, [protocolName]))
+        .toEqual(`${typeName}<${protocolName}>`);
+
+      renderExpect(new E.Type(typeName, true, [protocolName]))
+        .toEqual(`${typeName}<${protocolName}> *`);
+
+      renderExpect(new E.Type(typeName, true, [protocolName, protocolName]))
+        .toEqual(`${typeName}<${protocolName}, ${protocolName}> *`);
     });
   });
 
   describe('Property:', () => {
     const propertyName = 'propertyName';
-    const propertyType = new E.TypeElement('NSObject', true);
-    const memoryKeyword = E.PropertyMemoryKeyword.strong;
+    const propertyType = E.Type.ValueType('NSObject');
+    const memoryKeyword = E.PropertyModifierMemory.strong;
 
     it('any property', () => {
       renderExpect(new E.PropertyElement(propertyName, propertyType, memoryKeyword))
-        .toEqual(`\n@property (nonatomic, ${E.PropertyMemoryKeyword[memoryKeyword]}) ${propertyType.render()} ${propertyName};`);
+        .toEqual(`\n@property (nonatomic, ${E.PropertyModifierMemory[memoryKeyword]}) ${propertyType.render()} ${propertyName};`);
     });
   });
 });

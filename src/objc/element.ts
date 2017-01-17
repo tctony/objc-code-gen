@@ -252,61 +252,81 @@ export class ProtocolElement extends Element {
   }
 }
 
-export class TypeElement {
+export class Type extends Element {
   private typeName: string;
-  private isReference: boolean;
+  private isPointer: boolean;
+  private protocols: string[];
 
-  public constructor(name: string, isRef = false) {
+  public constructor(name: string, isPointer = false, protocols: string[] = []) {
+    super('Type');
     this.typeName = name;;
-    this.isReference = isRef;
+    this.isPointer = isPointer;
+    this.protocols = protocols;
   }
 
   public render(): string {
-    return this.typeName + (this.isReference ? ' *' : '');
+    return (this.typeName
+      + (this.protocols.length > 0 ? `<${this.protocols.join(', ')}>` : '')
+      + (this.isPointer ? ' *' : ''));
   }
 }
 
-enum PropertyAtomicKeyword {
+export module Type {
+  export function ValueType(name: string) {
+    return new Type(name);
+  }
+
+  export function PointerType(name: string) {
+    return new Type(name, true);
+  }
+
+  export function ProtocolType(proto: string) {
+    return new Type('id', false, [proto]);
+  }
+}
+
+
+enum PropertyModifierAtomic {
   atomic,
   nonatomic
 }
 
-enum PropertyNullabilityKeyward {
+enum PropertyModifierNullability {
   nonnull,
   nullable
 }
 
-export enum PropertyMemoryKeyword {
+export enum PropertyModifierMemory {
   assign,
   copy,
   strong,
   weak
 }
 
-enum PropertyReadabilityKeyword {
+enum PropertyModifierAccessibility {
   readonly,
   readwrite
 }
 
 export class PropertyElement extends Element {
   private propertyName: string;
-  private propertyType: TypeElement;
-  private memoryKeyword: PropertyMemoryKeyword;
-  private atomicKeyword: PropertyAtomicKeyword;
+  private propertyType: Type;
+  private memoryKeyword: PropertyModifierMemory;
+  private atomicKeyword: PropertyModifierAtomic;
 
-  public constructor(name: string, type: TypeElement, memory: PropertyMemoryKeyword) {
+  public constructor(name: string, type: Type, memoryModifier: PropertyModifierMemory) {
     super('Property');
     this.propertyName = name;
     this.propertyType = type;
-    this.memoryKeyword = memory;
-    this.atomicKeyword = PropertyAtomicKeyword.nonatomic;
+    this.memoryKeyword = memoryModifier;
+    this.atomicKeyword = PropertyModifierAtomic.nonatomic;
   }
 
   public render(): string {
     const keywords = (() => {
       const array = [];
-      array.push(PropertyAtomicKeyword[this.atomicKeyword]);
-      array.push(PropertyMemoryKeyword[this.memoryKeyword]);
+      array.push(PropertyModifierAtomic[this.atomicKeyword]);
+      array.push(PropertyModifierMemory[this.memoryKeyword]);
       return array;
     })();
 

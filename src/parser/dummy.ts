@@ -23,7 +23,8 @@ export function DummyParser() {
     hfile.addElement(new ObjC.ForwardDeclarationElement.ProtocolForwardDecl(protocolName));
     const classDecl = new ObjC.ClassDeclarationElement(className);
     classDecl.implementProtocol('NSObject');
-    classDecl.addProperty(new ObjC.PropertyElement(propertyName, new ObjC.TypeElement('int'), ObjC.PropertyMemoryKeyword.assign));
+    classDecl.addProperty(new ObjC.PropertyElement(propertyName, ObjC.Type.ValueType('int'), ObjC.PropertyModifierMemory.assign));
+    classDecl.addProperty(new ObjC.PropertyElement('delegate', ObjC.Type.ProtocolType(protocolName), ObjC.PropertyModifierMemory.weak));
     hfile.addElement(classDecl);
     hfile.addElement(new ObjC.ClassDeclarationElement(className, undefined, categoryName));
     hfile.addElement(new ObjC.ClassDeclarationElement(subClassName, className));
