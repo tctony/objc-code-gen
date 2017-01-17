@@ -134,15 +134,26 @@ block comment */`;
         .toEqual(`\n@interface ${className} : NSObject <${proto0}, ${proto1}>\n\n@end`);
     });
 
-    it('class with properties', () => {
+    it('class with properties and method declaration', () => {
       const classDecl = new E.ClassDeclarationElement(className);
       const property = new E.PropertyElement('property0', E.Type.ValueType('int'), E.PropertyModifierMemory.assign);
+      const method = new E.MethodDeclarationElement(false, E.Type.ValueType('void'), 'methodName');
+
+      function result(elems: E.IElement[]): string {
+        return `\n@interface ${className} : NSObject\n${elems.map((v) => { return v.render(); }).join('\n')}\n\n@end`;
+      }
+
       classDecl.addProperty(property);
       renderExpect(classDecl)
-        .toEqual(`\n@interface ${className} : NSObject\n${property.render()}\n\n@end`);
-      classDecl.addProperty(property);
+        .toEqual(result([property]));
+
+      classDecl.addProperty(property, property);
       renderExpect(classDecl)
-        .toEqual(`\n@interface ${className} : NSObject\n${property.render() + '\n' + property.render()}\n\n@end`);
+        .toEqual(result([property, property, property]));
+
+      classDecl.addMethod(method);
+      renderExpect(classDecl)
+        .toEqual(result([property, property, property, method]));
     });
   });
 
@@ -221,6 +232,54 @@ block comment */`;
     it('any property', () => {
       renderExpect(new E.PropertyElement(propertyName, propertyType, memoryKeyword))
         .toEqual(`\n@property (nonatomic, ${E.PropertyModifierMemory[memoryKeyword]}) ${propertyType.render()} ${propertyName};`);
+    });
+  });
+
+  describe('MethodNameComponent:', () => {
+    const m = 'methodName';
+    const t = E.Type.ValueType('ParameterType');
+    const p = 'parameterName';
+
+    it('name component without parameter', () => {
+      renderExpect(new E._MethodNameComponent(m))
+        .toEqual(m);
+    });
+
+    it('name component with parameter', () => {
+      renderExpect(new E._MethodNameComponent(m, t, p))
+        .toEqual(`${m}:(${t.render()})${p}`);
+    });
+  });
+
+  describe('MethodDeclaration:', () => {
+    const m = 'methodName';
+    const t = E.Type.ValueType('ParameterType');
+    const p = 'parameterName';
+
+    it('instance method without parameter', () => {
+      renderExpect(new E.MethodDeclarationElement(false, E.Type.ValueType('void'), m))
+        .toEqual('\n- (void)' + m + ';');
+    });
+
+    it('class method without parameter', () => {
+      renderExpect(new E.MethodDeclarationElement(true, E.Type.ValueType('void'), m))
+        .toEqual('\n+ (void)' + m + ';');
+    });
+
+    it('class method with one parameter', () => {
+      renderExpect(new E.MethodDeclarationElement(true, E.Type.ValueType('void'), [m], [t], [p]))
+        .toEqual(`\n+ (void)${m}:(${t.render()})${p};`);
+    });
+
+    it('class method with multi parameter', () => {
+      renderExpect(new E.MethodDeclarationElement(true, E.Type.ValueType('void'), [m, m], [t, t], [p, p]))
+        .toEqual(`\n+ (void)${m}:(${t.render()})${p} ${m}:(${t.render()})${p};`);
+    });
+
+    it('throw on lack of parameters', () => {
+      expect(() => {
+        new E.MethodDeclarationElement(true, E.Type.ValueType('void'), [m, m], [t, t], [p]);
+      }).toThrow();
     });
   });
 });

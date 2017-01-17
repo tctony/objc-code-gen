@@ -11,6 +11,9 @@ export function DummyParser() {
   return Factory.createParser(function (file: vf) {
     const className = file.stem;
     const propertyName = 'property';
+    const methodname = 'methodName';
+    const parameterType = ObjC.Type.PointerType('NSString');
+    const parameterName = 'parameterName';
     const otherClassName = 'OtherClass';
     const protocolName = className + 'Delegate';
     const categoryName = 'category';
@@ -21,11 +24,15 @@ export function DummyParser() {
     hfile.addElement(new ObjC.ImportElement('Foundation', 'Foundation', ObjC.ImportType.Std));
     hfile.addElement(new ObjC.ForwardDeclarationElement.ClassForwardDecl(otherClassName));
     hfile.addElement(new ObjC.ForwardDeclarationElement.ProtocolForwardDecl(protocolName));
-    const classDecl = new ObjC.ClassDeclarationElement(className);
-    classDecl.implementProtocol('NSObject');
-    classDecl.addProperty(new ObjC.PropertyElement(propertyName, ObjC.Type.ValueType('int'), ObjC.PropertyModifierMemory.assign));
-    classDecl.addProperty(new ObjC.PropertyElement('delegate', ObjC.Type.ProtocolType(protocolName), ObjC.PropertyModifierMemory.weak));
-    hfile.addElement(classDecl);
+    hfile.addElement((() => {
+      const classDecl = new ObjC.ClassDeclarationElement(className);
+      classDecl.implementProtocol('NSObject');
+      classDecl.addProperty(new ObjC.PropertyElement(propertyName, ObjC.Type.ValueType('int'), ObjC.PropertyModifierMemory.assign));
+      classDecl.addProperty(new ObjC.PropertyElement('delegate', ObjC.Type.ProtocolType(protocolName), ObjC.PropertyModifierMemory.weak));
+      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), methodname));
+      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodname, methodname], [parameterType, parameterType], [parameterName, parameterName]));
+      return classDecl;
+    })());
     hfile.addElement(new ObjC.ClassDeclarationElement(className, undefined, categoryName));
     hfile.addElement(new ObjC.ClassDeclarationElement(subClassName, className));
     hfile.addElement(new ObjC.ProtocolElement(protocolName));

@@ -158,12 +158,11 @@ export module ForwardDeclarationElement {
   }
 }
 
-export class ClassDeclarationElement extends Element {
+export class ClassDeclarationElement extends ElementArrayContainer {
   private className: string;
   private superClassName: string;
   private categoryName: Maybe.Maybe<string>;
   private implementedProtocols: string[];
-  private properties: ElementArrayContainer;
 
   public constructor(className: string, superClassName = 'NSObject', categoryName?: string) {
     super('ClassDeclaration');
@@ -171,17 +170,20 @@ export class ClassDeclarationElement extends Element {
     this.superClassName = superClassName;
     this.categoryName = (categoryName === undefined ? Maybe.Nothing<string>() : Maybe.Just(categoryName));
     this.implementedProtocols = [];
-    this.properties = new ElementArrayContainer('Properties');
   }
 
   public implementProtocol(protocol: string): void {
     this.implementedProtocols.push(protocol);
   }
 
-  public addProperty(...properties: PropertyElement[]) {
+  public addProperty(...properties: PropertyElement[]): void {
     properties.forEach((value) => {
-      this.properties.addElement(value);
+      this.addElement(value);
     });
+  }
+
+  public addMethod(methodDecl: MethodDeclarationElement): void {
+    this.addElement(methodDecl);
   }
 
   public description(): string {
@@ -190,12 +192,12 @@ export class ClassDeclarationElement extends Element {
 
   public render(): string {
     const protocolString = (this.implementedProtocols.length > 0 ? ` <${this.implementedProtocols.join(', ')}>` : '');
-    let propertyString = this.properties.render();
-    if (propertyString.length > 0) propertyString += '\n';
+    let bodyString = super.render();
+    if (bodyString.length > 0) bodyString += '\n';
     return Maybe.match((cateName: string) => {
-      return `\n@interface ${this.className} (${cateName})${protocolString}\n${propertyString}\n@end`;
+      return `\n@interface ${this.className} (${cateName})${protocolString}\n${bodyString}\n@end`;
     }, () => {
-      return `\n@interface ${this.className} : ${this.superClassName}${protocolString}\n${propertyString}\n@end`;
+      return `\n@interface ${this.className} : ${this.superClassName}${protocolString}\n${bodyString}\n@end`;
     }, this.categoryName);
   }
 }
@@ -331,5 +333,56 @@ export class PropertyElement extends Element {
     })();
 
     return `\n@property (${keywords.join(', ')}) ${this.propertyType.render()} ${this.propertyName};`;
+  }
+}
+
+// used internally, export for testing
+export class _MethodNameComponent implements IElement {
+  public constructor(
+    private methodName: string,
+    private parameterType?: Type,
+    private parameterName?: string) { }
+
+  public render(): string {
+    if (this.parameterType instanceof Type
+      && typeof this.parameterName === 'string') {
+      return `${this.methodName}:(${this.parameterType.render()})${this.parameterName}`;
+    } else {
+      return this.methodName;
+    }
+  }
+}
+
+export class MethodDeclarationElement extends ElementArrayContainer {
+  private isClassMethod: boolean;
+  private returnType: Type;
+
+  public constructor(isClassMethod: boolean, returnType: Type,
+    methodName: string | string[], paramterTypes: Type[] = [], paramterNames: string[] = []) {
+    super('MethodDeclaration');
+    this.isClassMethod = isClassMethod;
+    this.returnType = returnType;
+    if (typeof methodName === 'string') {
+      this.addElement(new _MethodNameComponent(methodName));
+    } else {
+      methodName.forEach((name: string, index: number) => {
+        const pt = paramterTypes[index];
+        const pn = paramterNames[index];
+        if (pt === undefined || pn === undefined) {
+          throw new Error('method name and parameter mismatch');
+        }
+        else {
+          this.addElement(new _MethodNameComponent(name, pt, pn));
+        }
+      });
+    }
+  }
+
+  public render(): string {
+    return '\n'
+      + (this.isClassMethod ? '+' : '-')
+      + ` (${this.returnType.render()})`
+      + super.renderElements(' ')
+      + ';';
   }
 }
