@@ -178,12 +178,22 @@ export class ClassDeclarationElement extends ElementArrayContainer {
 
   public addProperty(...properties: PropertyElement[]): void {
     properties.forEach((value) => {
-      this.addElement(value);
+      super.addElement(value);
     });
   }
 
   public addMethod(methodDecl: MethodDeclarationElement): void {
-    this.addElement(methodDecl);
+    super.addElement(methodDecl);
+  }
+
+  public addElement(elem: IElement): void {
+    if (elem instanceof PropertyElement) {
+      this.addProperty(elem);
+    } else if (elem instanceof MethodDeclarationElement) {
+      this.addMethod(elem);
+    } else {
+      throw new Error(`invalid elem add to class declaration: ${elem}`);
+    }
   }
 
   public description(): string {
@@ -202,7 +212,7 @@ export class ClassDeclarationElement extends ElementArrayContainer {
   }
 }
 
-export class ClassImplementationElement extends Element {
+export class ClassImplementationElement extends ElementArrayContainer {
   private className: string;
   private categoryName: Maybe.Maybe<string>;
 
@@ -222,15 +232,29 @@ export class ClassImplementationElement extends Element {
     }
   }
 
+  public addMethod(method: MethodImplementationElement): void {
+    super.addElement(method);
+  }
+
+  public addElement(elem: IElement): void {
+    if (elem instanceof MethodImplementationElement) {
+      this.addMethod(elem);
+    } else {
+      throw new Error(`invalid elem add to class implements: ${elem}`);
+    }
+  }
+
   public description(): string {
     return super.description() + ' ' + this.className;
   }
 
   public render(): string {
+    let bodyString = super.renderElements();
+    if (bodyString.length > 0) bodyString += '\n';
     return Maybe.match((cateName: string) => {
-      return `\n@implementation ${this.className} (${cateName})\n\n@end`;
+      return `\n@implementation ${this.className} (${cateName})\n${bodyString}\n@end`;
     }, () => {
-      return `\n@implementation ${this.className}\n\n@end`;
+      return `\n@implementation ${this.className}\n${bodyString}\n@end`;
     }, this.categoryName);
   }
 }
@@ -378,11 +402,48 @@ export class MethodDeclarationElement extends ElementArrayContainer {
     }
   }
 
+  public addElement(elem: IElement): void {
+    if (elem instanceof _MethodNameComponent) {
+      super.addElement(elem);
+    } else {
+      throw new Error(`invalid element add to method declaration: ${elem}`);
+    }
+  }
+
   public render(): string {
     return '\n'
       + (this.isClassMethod ? '+' : '-')
       + ` (${this.returnType.render()})`
       + super.renderElements(' ')
       + ';';
+  }
+}
+
+export class MethodImplementationElement extends ElementArrayContainer {
+  private methodDeclaration: MethodDeclarationElement;
+
+  public constructor(declaration: MethodDeclarationElement, codes: CodeElement[] = []) {
+    super('Method', codes);
+    this.methodDeclaration = declaration;
+  }
+
+  public addElement(elem: IElement): void {
+    if (elem instanceof CodeElement) {
+      super.addElement(elem);
+    } else {
+      throw new Error(`invalid element add to method implementation: ${elem}`);
+    }
+  }
+
+  public render(): string {
+    return this.methodDeclaration.render().replace(';', '\n{\n')
+      + super.renderElements()
+      + '\n}';
+  }
+}
+
+export class CodeElement extends Element {
+  public render(): string {
+    return '';
   }
 }

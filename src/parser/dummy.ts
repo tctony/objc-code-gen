@@ -30,7 +30,7 @@ export function DummyParser() {
       classDecl.addProperty(new ObjC.PropertyElement(propertyName, ObjC.Type.ValueType('int'), ObjC.PropertyModifierMemory.assign));
       classDecl.addProperty(new ObjC.PropertyElement('delegate', ObjC.Type.ProtocolType(protocolName), ObjC.PropertyModifierMemory.weak));
       classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), methodname));
-      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodname, methodname], [parameterType, parameterType], [parameterName, parameterName]));
+      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodname], [parameterType], [parameterName]));
       return classDecl;
     })());
     hfile.addElement(new ObjC.ClassDeclarationElement(className, undefined, categoryName));
@@ -38,7 +38,18 @@ export function DummyParser() {
     hfile.addElement(new ObjC.ProtocolElement(protocolName));
 
     mfile.addElement(new ObjC.ImportElement(className));
-    mfile.addElement(new ObjC.ClassImplementationElement(className));
+    mfile.addElement((() => {
+      const classImp = new ObjC.ClassImplementationElement(className);
+      classImp.addMethod((() => {
+        const d = new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), methodname);
+        return new ObjC.MethodImplementationElement(d);
+      })());
+      classImp.addMethod((() => {
+        const d = new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodname], [parameterType], [parameterName]);
+        return new ObjC.MethodImplementationElement(d);
+      })());
+      return classImp;
+    })());
     mfile.addElement(new ObjC.ClassImplementationElement(className, categoryName));
     mfile.addElement(new ObjC.ClassImplementationElement(subClassName));
 

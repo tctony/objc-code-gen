@@ -123,7 +123,7 @@ block comment */`;
         .toEqual(`\n@interface ${className} (${categoryName})\n\n@end`);
     });
 
-    it('class implements protocol', () => {
+    it('class declaration with implemented protocols', () => {
       const classDecl = new E.ClassDeclarationElement(className);
       classDecl.implementProtocol(proto0);
       renderExpect(classDecl)
@@ -154,6 +154,18 @@ block comment */`;
       classDecl.addMethod(method);
       renderExpect(classDecl)
         .toEqual(result([property, property, property, method]));
+
+      classDecl.addElement(property);
+      renderExpect(classDecl)
+        .toEqual(result([property, property, property, method, property]));
+
+      classDecl.addElement(method);
+      renderExpect(classDecl)
+        .toEqual(result([property, property, property, method, property, method]));
+
+      expect(() => {
+        classDecl.addElement({ render: () => { return ''; } })
+      }).toThrow();
     });
   });
 
@@ -174,6 +186,23 @@ block comment */`;
     it('category class implementation throw on empty category name', () => {
       expect(() => {
         new E.ClassImplementationElement(className, '');
+      }).toThrow();
+    });
+
+    it('class implemented with method', () => {
+      const c = new E.ClassImplementationElement(className);
+      const d = new E.MethodDeclarationElement(false, E.Type.ValueType('void'), 'methodName');
+      const m = new E.MethodImplementationElement(d);
+
+      function result(...methods: E.MethodImplementationElement[]): string {
+        return `\n@implementation ${className}\n${methods.map((v) => { return v.render(); }).join('\n')}\n\n@end`;
+      }
+
+      c.addMethod(m);
+      renderExpect(c).toEqual(result(m));
+
+      expect(() => {
+        c.addElement({ render: () => { return ''; } });
       }).toThrow();
     });
   });
@@ -280,6 +309,19 @@ block comment */`;
       expect(() => {
         new E.MethodDeclarationElement(true, E.Type.ValueType('void'), [m, m], [t, t], [p]);
       }).toThrow();
+    });
+  });
+
+  describe('MethodImplementation:', () => {
+    const d = new E.MethodDeclarationElement(false, E.Type.ValueType('void'), 'someMagicMethod');
+
+    function result(): string {
+      return d.render().replace(';', '\n{\n') + '\n}';
+    }
+
+    it('empty method implementation', () => {
+      renderExpect(new E.MethodImplementationElement(d))
+        .toEqual(result());
     });
   });
 });
