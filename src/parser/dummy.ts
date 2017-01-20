@@ -11,7 +11,7 @@ export function DummyParser() {
   return Factory.createParser(function (file: vf) {
     const className = file.stem;
     const propertyName = 'property';
-    const methodname = 'methodName';
+    const methodName = 'methodName';
     const parameterType = ObjC.Type.PointerType('NSString');
     const parameterName = 'parameterName';
     const otherClassName = 'OtherClass';
@@ -29,8 +29,8 @@ export function DummyParser() {
       classDecl.implementProtocol('NSObject');
       classDecl.addProperty(new ObjC.PropertyElement(propertyName, ObjC.Type.ValueType('int'), ObjC.PropertyModifierMemory.assign));
       classDecl.addProperty(new ObjC.PropertyElement('delegate', ObjC.Type.ProtocolType(protocolName), ObjC.PropertyModifierMemory.weak));
-      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), methodname));
-      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodname], [parameterType], [parameterName]));
+      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), methodName));
+      classDecl.addMethod(new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodName], [parameterType], [parameterName]));
       return classDecl;
     })());
     hfile.addElement(new ObjC.ClassDeclarationElement(className, undefined, categoryName));
@@ -41,11 +41,14 @@ export function DummyParser() {
     mfile.addElement((() => {
       const classImp = new ObjC.ClassImplementationElement(className);
       classImp.addMethod((() => {
-        const d = new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), methodname);
-        return new ObjC.MethodImplementationElement(d);
+        const d = new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), methodName);
+        const m = new ObjC.MethodImplementationElement(d);
+        m.addCode(new ObjC.CodeMethodCallElement('self', [methodName], ['@"defaultName"']));
+        m.addCode(new ObjC.CodeMethodCallElement('self', [methodName], ['@"defaultNameAgain"']));
+        return m;
       })());
       classImp.addMethod((() => {
-        const d = new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodname], [parameterType], [parameterName]);
+        const d = new ObjC.MethodDeclarationElement(false, ObjC.Type.ValueType('void'), [methodName], [parameterType], [parameterName]);
         return new ObjC.MethodImplementationElement(d);
       })());
       return classImp;

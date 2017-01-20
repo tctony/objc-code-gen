@@ -1,4 +1,7 @@
-import { Maybe } from "../coreutil";
+/// <reference path="./../../typings/index.d.ts" />
+
+import * as _ from 'lodash';
+import { Maybe } from '../coreutil';
 
 export interface IElement {
   render: () => string;
@@ -420,6 +423,7 @@ export class MethodDeclarationElement extends ElementArrayContainer {
 }
 
 export class MethodImplementationElement extends ElementArrayContainer {
+  protected elements: CodeElement[];
   private methodDeclaration: MethodDeclarationElement;
 
   public constructor(declaration: MethodDeclarationElement, codes: CodeElement[] = []) {
@@ -427,23 +431,117 @@ export class MethodImplementationElement extends ElementArrayContainer {
     this.methodDeclaration = declaration;
   }
 
+  public addCode(code: CodeElement): void {
+    super.addElement(code);
+  }
+
   public addElement(elem: IElement): void {
     if (elem instanceof CodeElement) {
-      super.addElement(elem);
+      this.addCode(elem);
     } else {
       throw new Error(`invalid element add to method implementation: ${elem}`);
     }
   }
 
   public render(): string {
-    return this.methodDeclaration.render().replace(';', '\n{\n')
-      + super.renderElements()
-      + '\n}';
+    let bodyString = this.renderElements();
+    if (bodyString.length > 0) bodyString += ';';
+    return this.methodDeclaration.render().replace(';', '\n{\n') + bodyString + '\n}';
+  }
+
+  public renderElements(separator = ';\n'): string {
+    return this.elements.map((elem: CodeElement) => {
+      return elem.renderWithIndent(new SpaceIndent(1));
+    }).join(separator);
   }
 }
 
-export class CodeElement extends Element {
+export abstract class Indent implements IElement {
+  public constructor(protected level: number) { }
+  public abstract render(): string;
+  public abstract forward(): Indent;
+  public abstract backward(): Indent;
+}
+
+export class SpaceIndent extends Indent {
+  public constructor(level: number = 0, private width = 4) {
+    super(level);
+  }
+
   public render(): string {
-    return '';
+    return _.repeat(' ', this.level * this.width);
+  }
+
+  public forward(): Indent {
+    return new SpaceIndent(this.level + 1, this.width);
+  }
+
+  public backward(): Indent {
+    if (this.level <= 0) {
+      throw new Error('can not move backward on level 0');
+    }
+    return new SpaceIndent(this.level - 1, this.width);
+  }
+}
+
+export abstract class CodeElement implements IElement {
+  public elementName: string;
+
+  public constructor(kind: string) {
+    this.elementName = `Code-${kind}`;
+  }
+
+  public render(): string {
+    return this.renderWithIndent(new SpaceIndent());
+  }
+
+  public abstract renderWithIndent(indent: Indent): string;
+}
+
+export class CodeExpressionElement extends CodeElement {
+  public constructor(private expression: string) {
+    super('Expression');
+  }
+
+  public renderWithIndent(indent: Indent): string {
+    return indent.render() + this.expression;
+  }
+}
+
+export class CodeMethodCallElement extends CodeElement {
+  public constructor(private receiver: string, private methodName: string | string[], private parameterNames: string[] = []) {
+    super('MethodCall');
+    if (typeof this.methodName !== 'string') {
+      if (this.methodName.length !== this.parameterNames.length) {
+        throw new Error('method name and parameter name mismatch');
+      }
+    }
+  }
+
+  public renderWithIndent(indent: Indent): string {
+    let bodyString: string;
+    if (typeof this.methodName === 'string') {
+      bodyString = this.methodName;
+    } else {
+      bodyString = this.methodName.map(function (name, index) {
+        return `${name}:${this.parameterNames[index]}`
+      }, this).join(' ');
+    }
+    return `${indent.render()}[${this.receiver} ${bodyString}]`;
+  }
+}
+
+export class CodeAssignmentElement extends CodeElement {
+  private left: string;
+  private right: CodeElement;
+
+  public constructor(left: string, right: CodeExpressionElement) {
+    super('Assignment');
+    this.left = left;
+    this.right = right;
+  }
+
+  public renderWithIndent(indent: Indent): string {
+    return `${indent.render()}${this.left} = ${this.right.render()}`;
   }
 }

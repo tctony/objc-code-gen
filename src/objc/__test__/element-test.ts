@@ -1,6 +1,7 @@
 /// <reference path="./../../../typings/index.d.ts" />
 
 import * as E from '../element';
+import * as _ from 'lodash';
 
 describe('Element', () => {
 
@@ -315,13 +316,122 @@ block comment */`;
   describe('MethodImplementation:', () => {
     const d = new E.MethodDeclarationElement(false, E.Type.ValueType('void'), 'someMagicMethod');
 
-    function result(): string {
-      return d.render().replace(';', '\n{\n') + '\n}';
+    function result(...codes: E.CodeElement[]): string {
+      let bodyString = codes.map((c) => { return c.renderWithIndent(new E.SpaceIndent(1)); }).join(';\n');
+      if (bodyString.length > 0) bodyString += ';';
+      return d.render().replace(';', '\n{\n') + bodyString + '\n}';
     }
 
     it('empty method implementation', () => {
       renderExpect(new E.MethodImplementationElement(d))
         .toEqual(result());
+    });
+
+    it('method implementation', () => {
+      const c = new E.CodeMethodCallElement('super', 'method');
+
+      renderExpect(new E.MethodImplementationElement(d, [c]))
+        .toEqual(result(c));
+      renderExpect(new E.MethodImplementationElement(d, [c, c]))
+        .toEqual(result(c, c));
+    });
+  });
+
+  describe('Indent:', () => {
+    it('space indent', () => {
+      const i = new E.SpaceIndent();
+      renderExpect(i).toEqual('');
+      renderExpect(i.forward()).toEqual(_.repeat(' ', 4));
+      renderExpect(i.forward().backward()).toEqual(_.repeat(' ', 0));
+      expect(() => { i.backward() }).toThrow();
+
+      renderExpect(new E.SpaceIndent(1)).toEqual(_.repeat(' ', 4));
+      renderExpect(new E.SpaceIndent(1, 2)).toEqual(_.repeat(' ', 2));
+    });
+  });
+
+  describe('CodeElement:', () => {
+    it('ElementName', () => {
+      expect(new E.CodeExpressionElement('').elementName)
+        .toEqual('Code-Expression');
+
+      expect(new E.CodeAssignmentElement('', new E.CodeExpressionElement('')).elementName)
+        .toEqual('Code-Assignment');
+    });
+
+    function renderExpectWithIndent(codeElem: E.CodeElement, indent: E.Indent) {
+      return expect(codeElem.renderWithIndent(indent));
+    }
+
+    const l0 = new E.SpaceIndent(0);
+    const l1 = l0.forward();
+    const l2 = l1.forward();
+
+    describe('Expression:', () => {
+      const a = 'a';
+      const e = new E.CodeExpressionElement(a);
+
+      it('expression without indent', () => {
+        renderExpect(e).toEqual(a);
+      });
+
+      it('expression with indent', () => {
+        renderExpectWithIndent(e, l0).toEqual(a);
+
+        renderExpectWithIndent(e, l1).toEqual(_.repeat(' ', 4) + a);
+
+        renderExpectWithIndent(e, l2).toEqual(_.repeat(' ', 8) + a);
+      });
+    });
+
+    describe('MethodCall', () => {
+      const r = 'self';
+      const m = 'method';
+      const p = 'parameter';
+
+      it('call method without parameter', () => {
+        const e = new E.CodeMethodCallElement(r, m);
+
+        renderExpectWithIndent(e, l0)
+          .toEqual('[self method]');
+
+        renderExpectWithIndent(e, l1)
+          .toEqual('    [self method]');
+      });
+
+      it('call method with one parameter', () => {
+        const e = new E.CodeMethodCallElement(r, [m], [p]);
+
+        renderExpectWithIndent(e, l0)
+          .toEqual('[self method:parameter]');
+      });
+
+      it('call method with multi parameter', () => {
+        const e = new E.CodeMethodCallElement(r, [m, m], [p, p]);
+
+        renderExpectWithIndent(e, l0)
+          .toEqual('[self method:parameter method:parameter]');
+      });
+
+      it('call method throw on mismatch', () => {
+        expect(() => {
+          new E.CodeMethodCallElement(r, [m, m], [p]);
+        }).toThrow();
+      });
+    });
+
+    describe('Assignment:', () => {
+      it('assignment', () => {
+        const a = 'a';
+        const b = 'b';
+        const e = new E.CodeAssignmentElement(a, new E.CodeExpressionElement(b));
+
+        renderExpectWithIndent(e, l0)
+          .toEqual(`${a} = ${b}`);
+
+        renderExpectWithIndent(e, l1)
+          .toEqual(`    ${a} = ${b}`);
+      });
     });
   });
 });
